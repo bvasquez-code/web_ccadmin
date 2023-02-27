@@ -33,11 +33,10 @@ const routes: Routes = [
   },
   {
     path :'',
-    component : CreatepresaleComponent,
     children : [
       {
-        path :'enterprise/venta/pages/registropreventa',
-        component : PruebaComponent
+        path :'enterprise/sale/pages/createpresale',
+        component : CreatepresaleComponent
       }
     ]
   },

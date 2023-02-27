@@ -11,6 +11,8 @@ export class PresaleDetEntity
     public NumUnitPriceSale : number = 0;
     public NumTotalPrice : number = 0;
 
+    public ProductInfo : ProductInfoDto = new ProductInfoDto();
+
     public constructor()
     {
         
@@ -20,11 +22,12 @@ export class PresaleDetEntity
     {
         this.ProductCod = ProductInfo.Product.ProductCod;
         this.Variant = Variant;
-        this.NumUnit = 1;
+        this.NumUnit = 0;
         this.NumUnitPrice = ProductInfo.Config.NumPrice;
         this.NumDiscount = 0;
         this.NumUnitPriceSale = this.NumUnitPrice - this.NumDiscount;
         this.NumTotalPrice = this.NumUnitPriceSale * this.NumUnit;
+        this.ProductInfo = ProductInfo;
 
     }
 
@@ -34,4 +37,13 @@ export class PresaleDetEntity
         this.NumUnitPriceSale = this.NumUnitPrice - this.NumDiscount;
         this.NumTotalPrice = this.NumUnitPriceSale * this.NumUnit;
     }
+
+    getNameSummary() : string
+    {
+        let NameSummary : string = "";
+        NameSummary = this.ProductInfo.Product.ProductName;
+        NameSummary = NameSummary + " (" + this.ProductInfo.VariantList.find( e => e.Variant === this.Variant )?.VariantDesc + ")";
+        return NameSummary;
+    }
+
 }

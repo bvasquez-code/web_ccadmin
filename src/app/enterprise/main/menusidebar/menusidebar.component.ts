@@ -160,8 +160,8 @@ export class MenusidebarComponent implements OnInit {
     MainMenu.icono = "nav-icon fa fa-cube";
 
     let RegistroPreventa : SubMenuPagina = new SubMenuPagina();
-    RegistroPreventa.url = "enterprise/venta/pages/registropreventa";
-    RegistroPreventa.url_position = "enterprise/venta/pages/registropreventa";
+    RegistroPreventa.url = "enterprise/sale/pages/createpresale";
+    RegistroPreventa.url_position = "enterprise/sale/pages/createpresale";
     RegistroPreventa.des_menu = "Realizar venta";
     RegistroPreventa.icono = "nav-icon fa fa-cube";
 

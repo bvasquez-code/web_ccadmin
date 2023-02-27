@@ -67,7 +67,7 @@
       </div><!-- /.col -->
     </div>
 
-    <div class="row" *ngIf="(true)">
+    <div class="row" *ngIf="(ShoppingCart.DetailList.length > 0)">
       <div class="col-12">
         <div class="card dcard">
           <div class="card-body px-1 px-md-3">
@@ -109,30 +109,35 @@
                 </thead>
 
                 <tbody class="mt-1">
-                  <tr class="bgc-h-yellow-l4 d-style">
+                  <tr class="bgc-h-yellow-l4 d-style" *ngFor="let Product of ShoppingCart.DetailList">
                     <td>
-                      <a href="#" class="text-blue-d1 text-600 text-95">ace.com</a>
+                      <a href="#" class="text-blue-d1 text-600 text-95">{{ Product.getNameSummary() }}</a>
                     </td>
 
                     <td class="text-600 text-orange-d2">
-                      $45
+                      PEN {{ Product.NumUnitPrice }}
                     </td>
 
                     <td class="d-none d-sm-table-cell text-grey-d1">
                       <div class="btn-group" role="group" aria-label="Basic mixed styles example">
                         <button type="button" class="btn btn-danger">-</button>
-                        <input type="text" value="0" class="form-control" style="width: 80px; text-align: center;">
+                        <input 
+                          type="text" 
+                          value="{{ Product.NumUnit }}" 
+                          class="form-control" 
+                          style="width: 80px; text-align: center;"
+                        >
                         <button type="button" class="btn btn-success">+</button>
                       </div>
                     </td>
 
                     <td class="text-600 text-orange-d2">
-                      $45
+                      PEN {{ Product.NumUnitPrice *  Product.NumUnit }}
                     </td><td class="text-600 text-orange-d2">
-                      $45
+                      PEN {{ Product.NumDiscount *  Product.NumUnit }}
                     </td>
                     <td class="text-600 text-orange-d2">
-                      $45
+                      PEN {{ Product.NumTotalPrice }}
                     </td>
 
 
@@ -150,11 +155,18 @@
                     <td>
                       <!-- action buttons -->
                       <div class="d-none d-lg-flex">
-                        <a href="#" class="mx-2px btn radius-1 border-2 btn-xs btn-brc-tp btn-light-secondary btn-h-lighter-success btn-a-lighter-success">
+                        <a href="#" 
+                          class="mx-2px btn radius-1 border-2 btn-xs btn-brc-tp btn-light-secondary btn-h-lighter-success btn-a-lighter-success"
+                          data-toggle="modal" data-target="#ProductModal"
+                          (click)="findDetailById(Product.ProductCod)"
+                        >
                           <i class="fa fa-pencil-alt"></i>
                         </a>
 
-                        <a href="#" class="mx-2px btn radius-1 border-2 btn-xs btn-brc-tp btn-light-secondary btn-h-lighter-danger btn-a-lighter-danger">
+                        <a href="#" 
+                          class="mx-2px btn radius-1 border-2 btn-xs btn-brc-tp btn-light-secondary btn-h-lighter-danger btn-a-lighter-danger"
+                          (click)="DeleteProduct(Product.ProductCod)"
+                        >
                           <i class="fa fa-trash-alt"></i>
                         </a>
                         <a href="#" class="mx-2px btn radius-1 border-2 btn-xs btn-brc-tp btn-light-secondary btn-h-lighter-warning btn-a-lighter-warning">
@@ -173,7 +185,10 @@
                             <div class="dropdown-header text-100 text-secondary-d1 border-b-1 brc-secondary-l2 text-600 mb-2">
                               ace.com
                             </div>
-                            <a href="#" class="dropdown-item">
+                            <a 
+                              href="#" 
+                              class="dropdown-item"
+                            >
                               <i class="fa fa-pencil-alt text-blue mr-1 p-2 w-4"></i>
                               Edit
                             </a>
@@ -210,12 +225,16 @@
 
                 </tbody>
               </table>
+
             </form>
 
-          </div><!-- /.card-body -->
+          </div>
+          <div class="card-body px-1 px-md-3">
+            <button type="button" class="btn btn-primary" (click)="save()" > Guardar </button>
+          </div>  
         </div>
-      </div><!-- /.col -->
-    </div><!-- /.row -->
+      </div>
+    </div>
 
     
     <div class="row">
@@ -317,7 +336,7 @@
                 <div>
                     <a href="#" 
                        class="btn btn-white btn-h-info btn-a-info btn-sm px-3"
-                       data-toggle="modal" data-target="#exampleModal"
+                       data-toggle="modal" data-target="#ProductModal"
                        (click)="findDetailById(product.ProductCod)"
                     >
                         <i class="fa fa-shopping-cart d-sm-none mr-2"></i>
@@ -377,11 +396,11 @@
   </div>
 
 
-  <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal fade" id="ProductModal" tabindex="-1" role="dialog" aria-labelledby="ProductModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
-      <div class="modal-content">
+      <div class="modal-content" style="width: 150%;">
         <div class="modal-header">
-          <h5 class="modal-title text-primary-d3" id="exampleModalLabel">
+          <h5 class="modal-title text-primary-d3" id="ProductModalLabel">
             {{ productInfoDtoSelect.Product.ProductName }}
           </h5>
 
@@ -414,7 +433,7 @@
                       </tr>
                       <tr>
                         <td><b>Total</b></td>
-                        <td>{{ productInfoDtoSelect.Config.NumPrice * TmpPresaleDetEntity.NumUnit}}</td>
+                        <td>{{ productInfoDtoSelect.Config.NumPrice * getTotalProduct(productInfoDtoSelect.Product.ProductCod)}}</td>
                       </tr>
                       <tr *ngIf="(productInfoDtoSelect.VariantList.length == 1 )">
                         <td><b>Cantidad</b></td>
@@ -428,7 +447,7 @@
                               #txt_NumUnit
                               (change)="HandbookUnit(productInfoDtoSelect,productInfoDtoSelect.VariantList[0])"
                               class="form-control" style="width: 80px;text-align: center;"
-                              value="{{ TmpPresaleDetEntity.NumUnit }}"
+                              value="{{ getTotalProduct(productInfoDtoSelect.Product.ProductCod) }}"
                             >
                             <button type="button" 
                               class="btn btn-success"            
@@ -442,7 +461,7 @@
                 </div>
               </div>
             </div>
-            <div class="card border-0" *ngIf="(productInfoDtoSelect.VariantList.length === 1 )">
+            <div class="card border-0" *ngIf="(productInfoDtoSelect.VariantList.length > 1 )">
               <div class="card-header bg-transparent border-0 pl-1">
                 <h5 class="card-title mb-2 mb-md-0 text-120 text-grey-d3">
                   <i class="fa fa-star mr-1 text-orange text-90"></i>
@@ -474,7 +493,6 @@
                       <td class="text-dark-tp3 opacity-1 text-95 text-600 pl-4">
                         {{ VariaProduct.VariantDesc }}
                       </td>
-
                       <td>
                         <div class="btn-group" role="group" aria-label="Basic mixed styles example">
                             <button type="button" 
@@ -482,8 +500,10 @@
                             (click)="subtractUnit(productInfoDtoSelect,VariaProduct)"
                           >-</button>
                           <input 
+                            #txt_NumUnit
                             (change)="HandbookUnit(productInfoDtoSelect,VariaProduct)"  
                             type="text" value="0" class="form-control" style="width: 80px; text-align: center;"
+                            value="{{ getTotalProductVariant(productInfoDtoSelect.Product.ProductCod,VariaProduct.Variant) }}"
                           >
                           <button type="button" 
                               class="btn btn-success"            
@@ -504,7 +524,7 @@
             Close
           </button>
 
-          <button type="button" class="btn btn-primary">
+          <button type="button" class="btn btn-primary" data-dismiss="modal">
             Save changes
           </button>
         </div>

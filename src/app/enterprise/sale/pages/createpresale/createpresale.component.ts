@@ -5,16 +5,15 @@ import { ResponseWsDto } from 'src/app/enterprise/shared/model/dto/ResponseWsDto
 import { ResponsePageSearch } from '../../../shared/model/dto/ResponsePageSearch';
 import { ProductSearchEntity } from '../../../product/model/entity/ProductSearchEntity';
 import { DataSesionService } from 'src/app/enterprise/compartido/service/datasesion.service';
-import { BusquedaProductoDto } from 'src/app/enterprise/venta/entity/BusquedaProductoDto';
 import { RespuestaPaginacionDto } from 'src/app/enterprise/compartido/entity/RespuestaPaginacionDto';
-import { ProductoBusquedaEntity } from 'src/app/enterprise/venta/entity/ProductoBusquedaEntity';
 import { InfoPaginaDto } from 'src/app/enterprise/compartido/entity/InfoPaginaDto';
 import { ProductService } from '../../../product/service/product.service';
 import { ProductInfoDto } from 'src/app/enterprise/product/model/dto/ProductInfoDto';
-import { PresaleDetEntity } from '../../model/entity/PresaleDetEntity';
 import { PresaleRegisterDto } from '../../model/dto/PresaleRegisterDto';
 import { ShoppingCartService } from '../../service/shoppingcart.service';
 import { ProductVariantEntity } from 'src/app/enterprise/product/model/entity/ProductVariantEntity';
+import { PresaleService } from '../../service/presale.service';
+import { CurrencyEntity } from 'src/app/enterprise/shared/model/entity/CurrencyEntity';
 
 @Component({
   selector: 'app-createpresale',
@@ -32,14 +31,10 @@ export class CreatepresaleComponent implements OnInit {
   productInfoDtoSelect : ProductInfoDto = new ProductInfoDto();
   NumPhysicalStockTotal : number = 0;
 
-  TmpPresaleRegisterDto : PresaleRegisterDto = new PresaleRegisterDto();
-  TmpPresaleDetEntity : PresaleDetEntity = new PresaleDetEntity();
+  ShoppingCart : PresaleRegisterDto = new PresaleRegisterDto();
+  CurrencySystem : CurrencyEntity = new CurrencyEntity();
 
-
-  g_busquedaProductoDto : BusquedaProductoDto = new BusquedaProductoDto();
   g_RptBusquedaProducto : RespuestaPaginacionDto = new RespuestaPaginacionDto();
-  g_ListaProductoBusqueda : ProductoBusquedaEntity[] = [];
-  g_ListaProductoBusquedaOrganizado : ProductoBusquedaEntity[][] = [];
   g_ListaBoton : InfoPaginaDto[] = [];
 
 
@@ -48,16 +43,19 @@ export class CreatepresaleComponent implements OnInit {
     ,private session : DataSesionService
     ,private productService : ProductService
     ,private shoppingCartService : ShoppingCartService
+    ,private presaleService : PresaleService
   ) 
   { 
 
     this.productSearch.StoreCod = this.session.getSessionStorageDto().StoreCod;
     this.productSearch.Page = 1;
     this.findAllProduct();
+    this.findDataForm();
 
   }
 
   ngOnInit(): void {
+    this.shoppingCartService.Init();
   }
 
   async findAllProduct()
@@ -74,6 +72,16 @@ export class CreatepresaleComponent implements OnInit {
         this.g_ListaBoton = [];
         this.g_RptBusquedaProducto.addResultPage(this.responsePageSearch);
         this.g_ListaBoton = this.CalcularPaginacion(this.g_RptBusquedaProducto);
+    }
+  }
+
+  async findDataForm()
+  {
+    const response : ResponseWsDto = await this.presaleService.findDataForm();
+
+    if( !response.ErrorStatus )
+    {
+      this.CurrencySystem = response.DataAdditional.find( e => e.Name === "CurrencySystem" )?.Data;
     }
   }
 
@@ -251,29 +259,47 @@ export class CreatepresaleComponent implements OnInit {
   addUnit(ProductInfo : ProductInfoDto,ProductVariant : ProductVariantEntity)
   {
     this.shoppingCartService.addUnit(ProductInfo,ProductVariant);
-    this.TmpPresaleDetEntity = this.shoppingCartService.GetTmpProductInCart(ProductInfo.Product.ProductCod,ProductVariant.Variant);
+    this.updateShoppingCart();
   }
 
   subtractUnit(ProductInfo : ProductInfoDto,ProductVariant : ProductVariantEntity)
   {
     this.shoppingCartService.subtractUnit(ProductInfo,ProductVariant);
-    this.TmpPresaleDetEntity = this.shoppingCartService.GetTmpProductInCart(ProductInfo.Product.ProductCod,ProductVariant.Variant);
+    this.updateShoppingCart();
   }
 
   HandbookUnit(ProductInfo : ProductInfoDto,ProductVariant : ProductVariantEntity)
   {
     this.shoppingCartService.HandbookUnit(ProductInfo,ProductVariant,Number(this.txt_NumUnit.nativeElement.value));
-    this.TmpPresaleDetEntity = this.shoppingCartService.GetTmpProductInCart(ProductInfo.Product.ProductCod,ProductVariant.Variant);
+    this.updateShoppingCart();
   }
 
-  addCarSale(ProductInfo : ProductInfoDto,ProductVariant : ProductVariantEntity, NumUnit : number)
+  updateShoppingCart()
   {
-    this.TmpPresaleRegisterDto.DetailList.find( e => e.ProductCod === "" && e.Variant === "" );
+    this.ShoppingCart = this.shoppingCartService.getCart();
   }
 
-  addShoppingCart()
+  getTotalProduct(ProductCod : string):number
   {
+    return this.shoppingCartService.getTotalProduct(ProductCod);
+  }
 
+  getTotalProductVariant(ProductCod : string,Variant : string):number
+  {
+    return this.shoppingCartService.getTotalProductVariant(ProductCod,Variant);
+  }
+
+  DeleteProduct(ProductCod : string)
+  {
+    this.shoppingCartService.DeleteProduct(ProductCod);
+    this.updateShoppingCart();
+  }
+
+  async save()
+  {
+    this.ShoppingCart.Headboard.CurrencyCod = this.CurrencySystem.CurrencyCod;
+
+    const response : ResponseWsDto = await this.presaleService.save(this.ShoppingCart);
   }
 
 }

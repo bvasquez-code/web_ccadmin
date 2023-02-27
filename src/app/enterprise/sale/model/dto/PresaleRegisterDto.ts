@@ -16,7 +16,7 @@ export class PresaleRegisterDto
     {
         this.Headboard.NumPriceSubTotal = this.GetNumPriceSubTotal();
         this.Headboard.NumDiscount = this.GetNumDiscount();
-        this.Headboard.NumTotalPrice = this.Headboard.NumPriceSubTotal - this.Headboard.NumDiscount;
+        this.Headboard.NumTotalPrice = this.Headboard.NumPriceSubTotal - this.Headboard.NumDiscount;     
     }
 
     GetNumPriceSubTotal()

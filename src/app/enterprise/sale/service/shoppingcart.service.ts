@@ -7,6 +7,7 @@ import { ProductInfoDto } from "../../product/model/dto/ProductInfoDto";
 import { PresaleRegisterDto } from "../model/dto/PresaleRegisterDto";
 import { PresaleDetEntity } from "../model/entity/PresaleDetEntity";
 import { ProductVariantEntity } from "../../product/model/entity/ProductVariantEntity";
+import { ProductInfoEntity } from "../../product/model/entity/ProductInfoEntity";
 
 @Injectable({
     providedIn: 'root'
@@ -22,9 +23,40 @@ export class ShoppingCartService
 
     }
 
-    public init()
+    public Init()
     {
         this.ShoppingCart = new PresaleRegisterDto();
+        let ShoppingCartStr :string | null = sessionStorage.getItem('ShoppingCart');
+
+        // if(  ShoppingCartStr )
+        // {
+        //     const ShoppingCartObj = JSON.parse(ShoppingCartStr);
+        //     // this.ShoppingCart.Headboard = ShoppingCartObj.Headboard;
+        //     // this.ShoppingCart.DetailList = ShoppingCartObj.DetailList;
+
+        //     this.ShoppingCart = Object.assign(new PresaleRegisterDto(), ShoppingCartObj);
+        // }
+   
+    }
+
+    public getCart():PresaleRegisterDto
+    {
+        return this.ShoppingCart;
+    }
+
+    public GetExistsStock(NumUnit : number,ProductInfo : ProductInfoDto,ProductVariant : ProductVariantEntity)
+    {
+        let NumDigitalStock : number = ProductInfo.InfoList.find( e => e.Variant === ProductVariant.Variant )?.NumDigitalStock  || 0;
+
+        if( NumUnit >  NumDigitalStock)
+        {
+            throw new Error('Imposible stock');
+        }
+        if( NumUnit <  0)
+        {
+            throw new Error('Imposible stock');
+        }
+        return NumUnit;
     }
 
 
@@ -34,15 +66,20 @@ export class ShoppingCartService
 
         if(presaleDetEntity)
         {
-            presaleDetEntity.Update(presaleDetEntity.NumUnit + 1);
+            presaleDetEntity.Update(
+                this.GetExistsStock(presaleDetEntity.NumUnit + 1,ProductInfo,ProductVariant)
+            );
         }
         else
         {   presaleDetEntity = new PresaleDetEntity();
             presaleDetEntity.Build(ProductInfo,ProductVariant.Variant);
+            presaleDetEntity.Update(
+                this.GetExistsStock(1,ProductInfo,ProductVariant)
+            );
             this.ShoppingCart.DetailList.push(presaleDetEntity);
         }
 
-        this.ShoppingCart.ReBuild();
+        this.ReBuild();
     }
 
     public HandbookUnit(ProductInfo : ProductInfoDto,ProductVariant : ProductVariantEntity, NumUnit : number)
@@ -51,16 +88,20 @@ export class ShoppingCartService
 
         if(presaleDetEntity)
         {
-            presaleDetEntity.Update(NumUnit);
+            presaleDetEntity.Update(
+                this.GetExistsStock(NumUnit,ProductInfo,ProductVariant)
+            );
         }
         else
         {   presaleDetEntity = new PresaleDetEntity();
             presaleDetEntity.Build(ProductInfo,ProductVariant.Variant);
-            presaleDetEntity.Update(NumUnit);
+            presaleDetEntity.Update(
+                this.GetExistsStock(NumUnit,ProductInfo,ProductVariant)
+            );
             this.ShoppingCart.DetailList.push(presaleDetEntity);
         }
 
-        this.ShoppingCart.ReBuild();
+        this.ReBuild();
     }
 
     public subtractUnit(ProductInfo : ProductInfoDto,ProductVariant : ProductVariantEntity)
@@ -75,11 +116,19 @@ export class ShoppingCartService
             }
             else
             {
-                presaleDetEntity.Update(presaleDetEntity.NumUnit - 1);
+                presaleDetEntity.Update(
+                    this.GetExistsStock(presaleDetEntity.NumUnit - 1,ProductInfo,ProductVariant)                
+                );
             }
         }
 
-        this.ShoppingCart.ReBuild();
+        this.ReBuild();
+    }
+
+    public DeleteProduct(ProductCod : string)
+    {
+        this.ShoppingCart.DetailList = this.ShoppingCart.DetailList.filter( e => e.ProductCod !== ProductCod );
+        this.ReBuild();
     }
 
 
@@ -105,12 +154,37 @@ export class ShoppingCartService
         return NumItem;
     }
 
-    GetTmpProductInCart(ProductCod : string , Variant : string) :PresaleDetEntity
+    GetTmpProductInCart(ProductCod : string) :PresaleDetEntity[]
     {
-        let PresaleDet : PresaleDetEntity | undefined = this.ShoppingCart.DetailList.find( e => e.ProductCod === ProductCod && e.Variant === Variant );
-        if(!PresaleDet) PresaleDet = new PresaleDetEntity();
+        let PresaleDet : PresaleDetEntity[] = this.ShoppingCart.DetailList.filter( e => e.ProductCod === ProductCod );
         return PresaleDet; 
     }
 
+    getTotalProduct(ProductCod : string):number
+    {
+      let NumUnit : number = 0;
+      let result = this.ShoppingCart.DetailList.filter( e => e.ProductCod === ProductCod);
+      NumUnit = result.map( item => item.NumUnit).reduce((a, b) => a + b, 0);
+      return NumUnit;
+    }
+  
+    getTotalProductVariant(ProductCod : string,Variant : string):number
+    {
+      let NumUnit : number = 0;
+      let result = this.ShoppingCart.DetailList.filter( e => e.ProductCod === ProductCod && e.Variant === Variant);
+      NumUnit = result.map( item => item.NumUnit).reduce((a, b) => a + b, 0);
+      return NumUnit;
+    }
 
+    ReBuild()
+    {
+        this.ShoppingCart.ReBuild();
+        this.saveCartSession();
+    }
+
+    saveCartSession()
+    {
+        sessionStorage.setItem("ShoppingCart",JSON.stringify(this.ShoppingCart));
+        console.log(sessionStorage.getItem("ShoppingCart"));
+    }
 }
